@@ -1,76 +1,87 @@
-# PrintShop - Professional Photo Print E-commerce Platform
+# Michael Haslim Photography Print Shop
 
-A complete e-commerce solution for selling professional photo prints with support for multiple print materials (metal, canvas, fine art paper), sizes, and customization options.
+Fine art photography prints from Hawaii, featuring stunning landscapes and nature photography.
 
-## Features
+## 🌺 Features
 
-### 🛍️ E-commerce Core
-- **Product Catalog**: Browse beautiful photo prints with advanced filtering
-- **Shopping Cart**: Persistent cart with real-time updates
-- **Checkout**: Secure payment processing with Stripe
-- **User Authentication**: Complete auth system with Supabase
-- **Order Management**: Track orders from purchase to delivery
+- **Hawaii Photography Gallery** - Curated collection of fine art prints
+- **Cloudflare R2 Storage** - Fast, reliable image hosting and CDN
+- **Automatic Deployments** - Connected to GitHub for seamless updates
+- **Next.js 15** - Modern React framework with server-side rendering
+- **Vercel Hosting** - Global edge network for optimal performance
+- **Stripe Integration** - Secure payment processing (when enabled)
 
-### 🎨 Print Customization
-- **Multiple Materials**: Metal, Canvas, Fine Art Paper
-- **Various Sizes**: 8x10, 11x14, 16x20, and custom sizes
-- **Dynamic Pricing**: Automatic price calculation based on material and size
-- **Print Options**: Quality options for different budgets
+## 🚀 Live Site
 
-### 🔧 Admin Features
-- **Product Management**: Add, edit, and manage photo prints
-- **CSV Import**: Bulk import products with AI enhancement
-- **Order Processing**: Manage orders and update status
-- **Analytics Dashboard**: Sales metrics and performance insights
+- **Production:** https://prints.michaelhaslimphoto.com
+- **Vercel:** https://michael-print-shop.vercel.app
+- **GitHub:** https://github.com/Slimdragon007/michael-print-shop
 
-### 🤖 AI Integration
-- **Auto Descriptions**: Generate compelling product descriptions
-- **Smart Tagging**: Automatic tag generation for SEO
-- **Content Analysis**: AI-powered image analysis and categorization
-- **Bulk Enhancement**: Improve existing product data
-
-### 🚀 Performance & SEO
-- **Next.js 14**: App Router with server components
-- **Image Optimization**: Automatic WebP/AVIF conversion
-- **SEO Optimized**: Meta tags, structured data, sitemap
-- **Core Web Vitals**: Optimized for performance metrics
-
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
-- **Next.js 14** - React framework with App Router
+- **Next.js 15** - React framework with App Router
 - **TypeScript** - Type-safe development
 - **Tailwind CSS** - Utility-first CSS framework
+- **React 18** - Latest React features
 - **Radix UI** - Accessible component primitives
-- **Framer Motion** - Smooth animations
-- **Zustand** - State management
 
-### Backend
-- **Supabase** - Database, Auth, and API
-- **PostgreSQL** - Relational database with RLS
-- **Stripe** - Payment processing
-- **OpenAI** - AI-powered content generation
+### Backend & Storage
+- **Cloudflare R2** - Object storage for images and assets
+- **Vercel Functions** - Serverless API endpoints
+- **Stripe** - Payment processing (configurable)
 
-### Additional Tools
-- **React Hook Form** - Form handling
-- **Zod** - Schema validation
-- **Papa Parse** - CSV parsing
-- **Lucide React** - Icon library
+### Development
+- **GitHub** - Version control and collaboration
+- **Vercel CLI** - Local development and deployment
+- **ESLint & TypeScript** - Code quality and type safety
 
-## Getting Started
+## 📁 Project Structure
+
+```
+├── app/                 # Next.js app router
+│   ├── admin/          # Admin dashboard
+│   ├── api/            # API routes
+│   ├── products/       # Product pages
+│   └── checkout/       # Checkout flow
+├── components/          # React components
+│   ├── admin/          # Admin components
+│   ├── ui/             # Reusable UI components
+│   └── layout/         # Layout components
+├── lib/                 # Utility functions and APIs
+│   ├── cloudflare-r2-api.ts  # R2 storage integration
+│   └── stripe/         # Payment processing
+├── public/              # Static assets
+│   └── images/         # Photo gallery images
+└── data/               # Photo data and configurations
+    └── luxury-gallery-photos.json
+```
+
+## 🎨 Gallery Content
+
+Features professional landscape photography from:
+- **Hawaii Islands** - Dramatic coastlines and tropical landscapes
+- **California** - Big Sur coastlines, Golden Gate Bridge, architectural landmarks
+- **American West** - Desert landscapes, mountains, and natural formations
+
+### Photo Categories
+- **Landscape** - Natural scenery and outdoor photography
+- **Architecture** - Bridges, buildings, and structural photography
+- **Seascape** - Ocean, cliffs, and coastal photography
+
+## 🚀 Development Setup
 
 ### Prerequisites
 - Node.js 18+ and npm
-- Supabase account
-- Stripe account
-- OpenAI API key (optional)
+- Vercel CLI
+- GitHub CLI (optional)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd print-shop
+   git clone https://github.com/Slimdragon007/michael-print-shop.git
+   cd michael-print-shop
    ```
 
 2. **Install dependencies**
@@ -82,131 +93,65 @@ A complete e-commerce solution for selling professional photo prints with suppor
    ```bash
    cp .env.example .env.local
    ```
-   
-   Fill in your environment variables:
-   ```env
-   # Supabase
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 
-   # Stripe
-   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-   STRIPE_SECRET_KEY=your_stripe_secret_key
-   STRIPE_WEBHOOK_SECRET=your_webhook_secret
-
-   # OpenAI (optional)
-   OPENAI_API_KEY=your_openai_key
-
-   # App Settings
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   NEXT_PUBLIC_APP_NAME=Print Shop
-   ADMIN_EMAIL=admin@yourprintshop.com
-   ```
-
-4. **Set up Supabase database**
-   - Create a new Supabase project
-   - Run the SQL schema from `lib/supabase/schema.sql`
-   - Set up Row Level Security policies
-   - Configure authentication providers
-
-5. **Configure Stripe**
-   - Set up webhook endpoint: `/api/webhooks/stripe`
-   - Add webhook events: `checkout.session.completed`, `payment_intent.succeeded`
-
-6. **Run the development server**
+4. **Run the development server**
    ```bash
    npm run dev
    ```
 
 Visit [http://localhost:3000](http://localhost:3000) to see your application.
 
-## Project Structure
+## 📦 Deployment
 
-```
-print-shop/
-├── app/                    # Next.js app router pages
-│   ├── admin/             # Admin panel pages
-│   ├── api/               # API routes
-│   ├── auth/              # Authentication pages
-│   ├── cart/              # Shopping cart page
-│   ├── checkout/          # Checkout flow
-│   └── products/          # Product pages
-├── components/            # React components
-│   ├── auth/              # Authentication components
-│   ├── cart/              # Shopping cart components
-│   ├── layout/            # Layout components
-│   ├── product/           # Product components
-│   └── ui/                # Reusable UI components
-├── lib/                   # Utility libraries
-│   ├── ai/                # AI integration
-│   ├── database/          # Database helpers
-│   ├── stripe/            # Stripe integration
-│   └── supabase/          # Supabase configuration
-├── store/                 # Zustand state stores
-├── types/                 # TypeScript type definitions
-└── utils/                 # Helper functions
+### Automatic Deployment (Recommended)
+1. **Push to GitHub** - Any push to the `main` branch triggers automatic deployment
+2. **Vercel Integration** - Connected for seamless CI/CD
+3. **Custom Domain** - Configured with prints.michaelhaslimphoto.com
+
+### Manual Deployment
+```bash
+# Deploy to production
+npm run build
+vercel --prod
+
+# Deploy preview
+vercel
 ```
 
-## Database Schema
+## 🔧 Available Scripts
 
-### Core Tables
-- **products** - Photo print products with metadata
-- **categories** - Product categorization
-- **print_options** - Material, size, and pricing options
-- **orders** - Customer orders
-- **order_items** - Individual items within orders
-- **user_profiles** - Extended user information
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
 
-### Key Features
-- Row Level Security (RLS) for data protection
-- Automatic triggers for updated_at timestamps
-- Full-text search on products
-- Optimized indexes for performance
+## 🌐 API Endpoints
 
-## CSV Import Format
+- `GET /api/products` - Fetch product catalog
+- `GET /api/photos` - Fetch photo data from R2
+- `POST /api/checkout` - Process checkout (Stripe)
+- `GET /api/orders` - Order management
 
-The system supports bulk product import via CSV with the following format:
+## 📱 Admin Dashboard
 
-```csv
-title,description,image_url,base_price,category,tags,width,height
-"Beautiful Sunset","","https://example.com/sunset.jpg",25.00,"Landscapes","sunset,nature,sky",1920,1080
-"City Skyline","","https://example.com/city.jpg",30.00,"Urban","city,buildings,skyline",2048,1365
-```
+Access the admin panel at `/admin` for:
+- Photo gallery management
+- Order processing
+- Content updates
+- Analytics (when configured)
 
-### Required Fields
-- `title` - Product name
-- `image_url` - Full URL to product image
-- `base_price` - Price in dollars
-- `width` - Image width in pixels  
-- `height` - Image height in pixels
+## 🎯 Performance Features
 
-### Optional Fields
-- `description` - Product description (can be auto-generated)
-- `category` - Product category (will be created if doesn't exist)
-- `tags` - Comma-separated tags (can be auto-generated)
+- **Next.js 15** - Latest performance optimizations
+- **Cloudflare R2** - Global CDN for fast image loading
+- **Static Generation** - Pre-rendered pages for speed
+- **Image Optimization** - Automatic WebP/AVIF conversion
+- **Edge Functions** - Serverless API responses
 
-## Deployment
+## 📄 License
 
-### Vercel (Recommended)
-1. Connect your repository to Vercel
-2. Add environment variables in Vercel dashboard
-3. Deploy with automatic CI/CD
+© 2024 Michael Haslim Photography. All rights reserved.
 
-### Environment Setup
-- Set `NODE_ENV=production`
-- Configure all environment variables
-- Set up Stripe webhooks with production URLs
-- Update Supabase RLS policies for production
+---
 
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.
+Built with ❤️ using Next.js, TypeScript, and Cloudflare R2.
