@@ -147,7 +147,7 @@ export default async function Home() {
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Shield className="h-6 w-6 text-purple-600" />
               </div>
-              <CardTitle>100% Guarantee</CardTitle>
+              <CardTitle>100% Guarantee ✓</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
