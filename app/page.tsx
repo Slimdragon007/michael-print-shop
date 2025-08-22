@@ -152,6 +152,7 @@ export default async function Home() {
             <CardContent>
               <p className="text-sm text-muted-foreground">
                 Not satisfied? We'll reprint or refund your order, no questions asked
+                {/* Test: GitHub + Vercel auto-deployment working! */}
               </p>
             </CardContent>
           </Card>
