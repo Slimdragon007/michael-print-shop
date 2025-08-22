@@ -1,0 +1,168 @@
+# Next.js Static Export Configuration for Hostinger
+# Generated for Print Shop deployment
+
+# Enable rewrite engine
+RewriteEngine On
+
+# Force HTTPS (if SSL is available)
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} ^print\.michaelhaslimphoto\.com$ [NC]
+RewriteRule ^(.*)$ https://print.michaelhaslimphoto.com%{REQUEST_URI} [L,R=301]
+
+# Handle Next.js static export routing
+# Route requests to HTML files if they exist
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/_next/
+RewriteCond %{REQUEST_URI} !^/api/
+RewriteRule ^([^.]+)/?$ /$1.html [L,QSA]
+
+# Handle directory requests
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteCond %{REQUEST_URI} !.*/$
+RewriteRule ^(.*)$ /$1/ [R=301,L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    
+    # HSTS (if using HTTPS)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+    
+    # Cache control for static assets
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    
+    # Cache control for HTML files
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "public, max-age=3600"
+    </FilesMatch>
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE text/javascript
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Expire headers for better caching
+<IfModule mod_expires.c>
+    ExpiresActive On
+    
+    # Images
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+    ExpiresByType image/x-icon "access plus 1 year"
+    
+    # Fonts
+    ExpiresByType font/woff "access plus 1 year"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType application/font-woff "access plus 1 year"
+    ExpiresByType application/font-woff2 "access plus 1 year"
+    
+    # CSS and JavaScript
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/javascript "access plus 1 year"
+    ExpiresByType application/x-javascript "access plus 1 year"
+    
+    # HTML
+    ExpiresByType text/html "access plus 1 hour"
+    
+    # Other
+    ExpiresByType application/pdf "access plus 1 month"
+    ExpiresByType application/xml "access plus 1 hour"
+    ExpiresByType text/xml "access plus 1 hour"
+    ExpiresByType application/json "access plus 1 hour"
+    
+    # Default
+    ExpiresDefault "access plus 1 week"
+</IfModule>
+
+# Protect sensitive files
+<Files ".env*">
+    Require all denied
+</Files>
+
+<Files "*.config.*">
+    Require all denied
+</Files>
+
+<Files "package*.json">
+    Require all denied
+</Files>
+
+<Files "*.md">
+    Require all denied
+</Files>
+
+<Files ".git*">
+    Require all denied
+</Files>
+
+<Files "*.log">
+    Require all denied
+</Files>
+
+# Block access to hidden files and folders
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Custom error pages
+ErrorDocument 404 /404.html
+
+# MIME types
+<IfModule mod_mime.c>
+    AddType application/javascript .js
+    AddType text/css .css
+    AddType image/svg+xml .svg
+    AddType font/woff .woff
+    AddType font/woff2 .woff2
+    AddType application/json .json
+    AddType image/webp .webp
+</IfModule>
+
+# Disable server signature
+ServerSignature Off
+
+# Prevent access to backup files
+<FilesMatch "\.(bak|backup|old|tmp|temp)$">
+    Require all denied
+</FilesMatch>
+
+# Basic bot protection
+<Limit GET POST>
+    order allow,deny
+    allow from all
+    deny from 169.254.169.254
+</Limit>
+
+# Block suspicious user agents
+SetEnvIfNoCase User-Agent "^libwww-perl" block_bot
+SetEnvIfNoCase User-Agent "^wget" block_bot
+SetEnvIfNoCase User-Agent "^curl" block_bot
+SetEnvIfNoCase User-Agent ".*WinHttp.*" block_bot
+
+<RequireAll>
+    Require all granted
+    Require not env block_bot
+</RequireAll>

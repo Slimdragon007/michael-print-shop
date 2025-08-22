@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://prints.michaelhaslimphoto.com/sitemap.xml
+
+# Block admin areas
+Disallow: /admin/
+Disallow: /api/
+
+# Allow products and collections
+Allow: /products/
+Allow: /collections/
+
+# Allow static assets
+Allow: /_next/static/
+Allow: /_next/image/
+Allow: /favicon.ico

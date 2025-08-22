@@ -1,0 +1,45 @@
+name = "print-shop-cdn"
+main = "src/worker/index.ts"
+compatibility_date = "2024-08-15"
+
+# Your Cloudflare account ID
+account_id = "84aae1ce11a8381c36bdcf6d9b58aca4"
+
+# Worker configuration
+[vars]
+ENVIRONMENT = "production"
+CDN_BASE_URL = "https://cdn.prints.michaelhaslimphoto.com"
+
+# R2 Bucket binding for images
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "print-shop-images"
+preview_bucket_name = "print-shop-images-preview"
+
+# Assets binding for fallback images (optional)
+# [assets]
+# directory = "./src/worker/assets"
+# binding = "ASSETS"
+
+# Routes for production and preview
+[env.production]
+routes = [
+  { pattern = "cdn.prints.michaelhaslimphoto.com/*", zone_name = "michaelhaslimphoto.com" }
+]
+vars = { ENVIRONMENT = "production", CDN_BASE_URL = "https://cdn.prints.michaelhaslimphoto.com" }
+[[env.production.r2_buckets]]
+binding = "R2"
+bucket_name = "print-shop-images"
+
+[env.preview]
+routes = [
+  { pattern = "preview-cdn.prints.michaelhaslimphoto.com/*", zone_name = "michaelhaslimphoto.com" }
+]
+vars = { ENVIRONMENT = "preview", CDN_BASE_URL = "https://preview-cdn.prints.michaelhaslimphoto.com" }
+[[env.preview.r2_buckets]]
+binding = "R2"
+bucket_name = "print-shop-images-preview"
+
+# Development configuration
+[env.development]
+vars = { ENVIRONMENT = "development", CDN_BASE_URL = "http://localhost:8787" }

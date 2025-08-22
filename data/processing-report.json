@@ -1,0 +1,56 @@
+{
+  "timestamp": "2025-08-14T07:56:10.692Z",
+  "success": false,
+  "totalTime": 1083864,
+  "steps": {
+    "import": {
+      "processed": 585,
+      "errors": 0
+    },
+    "optimize": {
+      "processed": 52,
+      "errors": 23
+    },
+    "sync": {
+      "scanned": 1494,
+      "new": 2079,
+      "modified": 0,
+      "errors": 121
+    },
+    "sitemap": {
+      "generated": true,
+      "urls": 587
+    }
+  },
+  "errors": [
+    "Optimize: Failed to process ._final_of_flagstaff_main_01_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._mbbbsca1bixby_bridge_big_sur_c_main_03_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._mbbbsca2bixby_bridge_big_sur_c_main_01_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_01_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_02_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_03_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_04_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_05_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_06_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_07_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_08_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_09_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_10_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_11_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_12_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_13_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_14_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_15_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_16_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_photos_main_17_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_resort_long_links__main_01_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_resort_long_links__main_02_2024.jpg: Input file contains unsupported image format",
+    "Optimize: Failed to process ._sedona_golf_resort_rainbow_25_main_01_2024.jpg: Input file contains unsupported image format"
+  ],
+  "summary": {
+    "photosImported": 585,
+    "imagesOptimized": 52,
+    "filesScanned": 1494,
+    "totalErrors": 23
+  }
+}
