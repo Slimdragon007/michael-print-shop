@@ -1,7 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr'
-import { Database } from '@/types'
+// Supabase client removed - using Cloudflare R2 instead
+// This file exists for legacy compatibility but is not used
 
-export const supabase = createBrowserClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+export const supabase = null

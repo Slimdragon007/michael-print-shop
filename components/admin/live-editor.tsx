@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
+// import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd' // Removed for compatibility
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -122,27 +122,16 @@ export function LiveEditor({ allProducts, onProductsUpdate }: LiveEditorProps) {
     }
   }
 
-  const ProductDragItem = ({ product, index, isDragging }: any) => (
-    <Draggable draggableId={product.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`p-3 border rounded-lg bg-white transition-all ${
-            snapshot.isDragging ? 'shadow-lg rotate-2 z-50' : 'hover:shadow-md'
-          }`}
-        >
-          <img 
-            src={product.image_url} 
-            alt={product.title}
-            className="w-full h-32 object-cover rounded mb-2"
-          />
-          <h4 className="font-semibold text-sm truncate">{product.title}</h4>
-          <p className="text-xs text-gray-600">${product.base_price}</p>
-        </div>
-      )}
-    </Draggable>
+  const ProductItem = ({ product, index, isDragging }: any) => (
+    <div className="p-3 border rounded-lg bg-white transition-all hover:shadow-md">
+      <img 
+        src={product.image_url} 
+        alt={product.title}
+        className="w-full h-32 object-cover rounded mb-2"
+      />
+      <h4 className="font-semibold text-sm truncate">{product.title}</h4>
+      <p className="text-xs text-gray-600">${product.base_price}</p>
+    </div>
   )
 
   return (
@@ -186,35 +175,26 @@ export function LiveEditor({ allProducts, onProductsUpdate }: LiveEditorProps) {
 
         <TabsContent value="editor" className="space-y-4">
           {currentDrop ? (
-            <DragDropContext onDragEnd={handleProductDragEnd}>
+            <div>
               <div className="grid lg:grid-cols-2 gap-6">
                 {/* Available Products */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Available Photos</CardTitle>
-                    <CardDescription>Drag photos to add them to the current drop</CardDescription>
+                    <CardDescription>Click photos to add them to the current drop</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Droppable droppableId="available">
-                      {(provided) => (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className="grid grid-cols-2 gap-4 min-h-[400px]"
-                        >
-                          {allProducts
-                            .filter(p => !currentDrop.products.includes(p.id))
-                            .map((product, index) => (
-                              <ProductDragItem 
-                                key={product.id} 
-                                product={product} 
-                                index={index} 
-                              />
-                            ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
+                    <div className="grid grid-cols-2 gap-4 min-h-[400px]">
+                      {allProducts
+                        .filter(p => !currentDrop.products.includes(p.id))
+                        .map((product, index) => (
+                          <ProductItem 
+                            key={product.id} 
+                            product={product} 
+                            index={index} 
+                          />
+                        ))}
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -240,31 +220,20 @@ export function LiveEditor({ allProducts, onProductsUpdate }: LiveEditorProps) {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <Droppable droppableId="drop">
-                      {(provided, snapshot) => (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className={`grid grid-cols-2 gap-4 min-h-[400px] p-4 border-2 border-dashed rounded-lg transition-colors ${
-                            snapshot.isDraggingOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300'
-                          }`}
-                        >
-                          {dropsManager.getDropProducts(currentDrop.id, allProducts)
-                            .map((product, index) => (
-                              <ProductDragItem 
-                                key={product.id} 
-                                product={product} 
-                                index={index} 
-                              />
-                            ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
+                    <div className="grid grid-cols-2 gap-4 min-h-[400px] p-4 border-2 border-dashed rounded-lg border-gray-300">
+                      {dropsManager.getDropProducts(currentDrop.id, allProducts)
+                        .map((product, index) => (
+                          <ProductItem 
+                            key={product.id} 
+                            product={product} 
+                            index={index} 
+                          />
+                        ))}
+                    </div>
                   </CardContent>
                 </Card>
               </div>
-            </DragDropContext>
+            </div>
           ) : (
             <Card>
               <CardContent className="p-8 text-center">

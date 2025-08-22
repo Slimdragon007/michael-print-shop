@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+// import { createClient } from '@supabase/supabase-js' // Removed for Cloudflare R2
 import OpenAI from 'openai'
 import fs from 'fs/promises'
 import path from 'path'

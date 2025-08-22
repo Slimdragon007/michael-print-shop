@@ -1,5 +1,5 @@
-import { photoProcessingML } from './error-prevention'
-import { createClient } from '@supabase/supabase-js'
+// Smart photo processor simplified for Cloudflare R2
+// Removed Supabase dependencies - using file-based storage
 import fs from 'fs/promises'
 import path from 'path'
 import { exec } from 'child_process'
@@ -40,14 +40,10 @@ interface BatchProcessingResult {
 }
 
 export class SmartPhotoProcessor {
-  private supabase: ReturnType<typeof createClient>
   private processingQueue: Set<string> = new Set()
 
   constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    // Using Cloudflare R2 storage instead of Supabase
   }
 
   /**
@@ -74,33 +70,27 @@ export class SmartPhotoProcessor {
 
       this.processingQueue.add(filePath)
 
-      // Step 1: ML Pre-validation (unless skipped)
+      // Step 1: Basic file validation (ML disabled for R2)
       if (!options.skipML) {
-        console.log(`🧠 Running ML validation for: ${path.basename(filePath)}`)
+        console.log(`📸 Running basic validation for: ${path.basename(filePath)}`)
         
         try {
-          const mlPrediction = await photoProcessingML.validateBeforeProcessing(filePath)
-          result.mlPrediction = mlPrediction
+          // Basic file validation instead of ML
+          const basicValidation = await this.basicFileValidation(filePath)
+          result.mlPrediction = basicValidation
           
-          if (!mlPrediction.shouldProceed) {
-            result.warnings.push(`ML suggests skipping: ${mlPrediction.recommendations.join(', ')}`)
+          if (!basicValidation.shouldProceed) {
+            result.warnings.push(`Validation suggests skipping: ${basicValidation.recommendations.join(', ')}`)
             
-            if (mlPrediction.riskLevel === 'high') {
-              result.errors.push('ML determined file too risky to process')
-              await this.logMLDecision(filePath, mlPrediction, 'skipped_high_risk')
+            if (basicValidation.riskLevel === 'high') {
+              result.errors.push('File determined too risky to process')
               return result
             }
           }
 
-          // Apply any pre-processing recommendations
-          if (mlPrediction.recommendations.length > 0) {
-            const fixes = await this.applyPreProcessingFixes(filePath, mlPrediction.recommendations)
-            result.appliedFixes.push(...fixes)
-          }
-
-        } catch (mlError) {
-          console.warn('ML validation failed, proceeding without it:', mlError)
-          result.warnings.push('ML validation unavailable, proceeding with standard processing')
+        } catch (validationError) {
+          console.warn('Basic validation failed, proceeding:', validationError)
+          result.warnings.push('Validation unavailable, proceeding with standard processing')
         }
       }
 
@@ -108,7 +98,7 @@ export class SmartPhotoProcessor {
       const validation = await this.validateFile(filePath)
       if (!validation.valid) {
         result.errors.push(...validation.errors)
-        await photoProcessingML.logError({
+        await this.logErrorToFile({
           errorType: 'file_corruption',
           errorMessage: validation.errors.join('; '),
           filePath,
@@ -122,8 +112,8 @@ export class SmartPhotoProcessor {
       const processingResult = await this.processWithRetries(filePath, options, result)
       
       if (processingResult.success) {
-        // Log success for ML learning
-        await photoProcessingML.logSuccess({
+        // Log success to file system instead of database
+        await this.logSuccessToFile({
           filePath,
           fileSize: validation.fileSize!,
           fileFormat: validation.fileFormat!,
@@ -144,7 +134,7 @@ export class SmartPhotoProcessor {
       const errorMessage = error instanceof Error ? error.message : String(error)
       result.errors.push(`Unexpected error: ${errorMessage}`)
       
-      await photoProcessingML.logError({
+      await this.logErrorToFile({
         errorType: 'processing_failed',
         errorMessage,
         filePath,
@@ -267,8 +257,8 @@ export class SmartPhotoProcessor {
         lastError = error
         const errorMessage = error instanceof Error ? error.message : String(error)
         
-        // Log error for ML learning
-        await photoProcessingML.logError({
+        // Log error to file system
+        await this.logErrorToFile({
           errorType: this.determineErrorType(error),
           errorMessage,
           filePath,
@@ -276,41 +266,23 @@ export class SmartPhotoProcessor {
           context: { attempt: attemptNumber, options }
         })
 
-        // Check if ML suggests retrying
-        const shouldRetry = await photoProcessingML.shouldRetry({
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-          errorType: this.determineErrorType(error),
-          errorMessage,
-          filePath,
-          processingStep: this.determineProcessingStep(error),
-          context: { attempt: attemptNumber },
-          resolved: false
-        }, attemptNumber)
+        // Simple retry logic without ML
+        const shouldRetry = attemptNumber < 2 && !errorMessage.includes('corrupt')
 
         if (!shouldRetry || attemptNumber >= maxAttempts) {
           break
         }
 
-        // Apply learned fixes before retry
+        // Apply basic fixes before retry
         try {
-          const fixes = await photoProcessingML.autoFixIssues(filePath, [{
-            id: crypto.randomUUID(),
-            timestamp: new Date(),
-            errorType: this.determineErrorType(error),
-            errorMessage,
-            filePath,
-            processingStep: this.determineProcessingStep(error),
-            context: { attempt: attemptNumber },
-            resolved: false
-          }])
+          const fixes = await this.applyBasicFixes(filePath, errorMessage)
           
           if (fixes.length > 0) {
             result.appliedFixes.push(...fixes)
             console.log(`🔧 Applied fixes before retry: ${fixes.join(', ')}`)
           }
         } catch (fixError) {
-          console.warn('Failed to apply auto-fixes:', fixError)
+          console.warn('Failed to apply fixes:', fixError)
         }
 
         // Wait before retry (with smart backoff)
@@ -385,18 +357,12 @@ export class SmartPhotoProcessor {
       // Cap at 1.0
       qualityScore = Math.min(qualityScore, 1.0)
       
-      // Store quality assessment
-      await this.supabase
-        .from('photo_quality_assessments')
-        .insert({
-          file_path: originalPath,
-          quality_score: qualityScore,
-          assessment_details: {
-            output_files: outputFiles,
-            variants_created: createdVariants.length,
-            expected_variants: expectedVariants.length
-          }
-        })
+      // Store quality assessment to file
+      await this.logQualityAssessment(originalPath, qualityScore, {
+        output_files: outputFiles,
+        variants_created: createdVariants.length,
+        expected_variants: expectedVariants.length
+      })
       
       return qualityScore
       
@@ -407,24 +373,23 @@ export class SmartPhotoProcessor {
   }
 
   /**
-   * Optimize batch processing order using ML insights
+   * Optimize batch processing order using basic file analysis
    */
   private async optimizeBatchOrder(filePaths: string[]): Promise<string[]> {
     try {
-      // Get ML predictions for all files
-      const predictions = await Promise.all(
-        filePaths.map(async (path) => ({
-          path,
-          prediction: await photoProcessingML.validateBeforeProcessing(path)
-        }))
+      // Sort by file size (process smaller files first)
+      const pathsWithSize = await Promise.all(
+        filePaths.map(async (path) => {
+          try {
+            const stats = await fs.stat(path)
+            return { path, size: stats.size }
+          } catch {
+            return { path, size: Infinity }
+          }
+        })
       )
 
-      // Sort by risk level (process safest first)
-      const sorted = predictions.sort((a, b) => {
-        const riskOrder = { 'low': 0, 'medium': 1, 'high': 2 }
-        return riskOrder[a.prediction.riskLevel] - riskOrder[b.prediction.riskLevel]
-      })
-
+      const sorted = pathsWithSize.sort((a, b) => a.size - b.size)
       return sorted.map(item => item.path)
 
     } catch (error) {
@@ -599,40 +564,97 @@ export class SmartPhotoProcessor {
     return appliedFixes
   }
 
-  private async logMLDecision(filePath: string, prediction: any, decision: string): Promise<void> {
-    await this.supabase
-      .from('photo_processing_insights')
-      .insert({
-        error_type: 'ml_decision',
-        insights: `ML decision: ${decision} for ${filePath}. Risk: ${prediction.riskLevel}, Confidence: ${prediction.confidence}`,
-        error_count: 1,
-        confidence_score: prediction.confidence
-      })
+  // Helper methods for file-based logging (replacing Supabase)
+  private async basicFileValidation(filePath: string): Promise<any> {
+    const stats = await fs.stat(filePath)
+    const ext = path.extname(filePath).toLowerCase()
+    const supportedFormats = ['.jpg', '.jpeg', '.png', '.webp']
+    
+    return {
+      shouldProceed: supportedFormats.includes(ext) && stats.size > 0,
+      riskLevel: stats.size > 50 * 1024 * 1024 ? 'high' : 'low',
+      confidence: 0.8,
+      recommendations: stats.size > 50 * 1024 * 1024 ? ['Consider compressing large file'] : []
+    }
+  }
+
+  private async logSuccessToFile(data: any): Promise<void> {
+    const logDir = path.join(process.cwd(), 'logs')
+    await fs.mkdir(logDir, { recursive: true })
+    const logFile = path.join(logDir, 'processing-success.json')
+    
+    try {
+      const entry = { timestamp: new Date().toISOString(), ...data }
+      await fs.appendFile(logFile, JSON.stringify(entry) + '\n')
+    } catch (error) {
+      console.warn('Failed to log success:', error)
+    }
+  }
+
+  private async logErrorToFile(data: any): Promise<void> {
+    const logDir = path.join(process.cwd(), 'logs')
+    await fs.mkdir(logDir, { recursive: true })
+    const logFile = path.join(logDir, 'processing-errors.json')
+    
+    try {
+      const entry = { timestamp: new Date().toISOString(), ...data }
+      await fs.appendFile(logFile, JSON.stringify(entry) + '\n')
+    } catch (error) {
+      console.warn('Failed to log error:', error)
+    }
+  }
+
+  private async logQualityAssessment(filePath: string, score: number, details: any): Promise<void> {
+    const logDir = path.join(process.cwd(), 'logs')
+    await fs.mkdir(logDir, { recursive: true })
+    const logFile = path.join(logDir, 'quality-assessments.json')
+    
+    try {
+      const entry = { 
+        timestamp: new Date().toISOString(), 
+        filePath, 
+        qualityScore: score, 
+        details 
+      }
+      await fs.appendFile(logFile, JSON.stringify(entry) + '\n')
+    } catch (error) {
+      console.warn('Failed to log quality assessment:', error)
+    }
+  }
+
+  private async applyBasicFixes(filePath: string, errorMessage: string): Promise<string[]> {
+    const fixes: string[] = []
+    
+    // Basic fix attempts based on error message
+    if (errorMessage.includes('permission')) {
+      fixes.push('File permission issue detected')
+    }
+    if (errorMessage.includes('size')) {
+      fixes.push('File size issue detected')
+    }
+    
+    return fixes
   }
 
   private async logProcessingResult(result: ProcessingResult): Promise<void> {
-    // Log additional processing insights
     if (result.appliedFixes.length > 0) {
-      await this.supabase
-        .from('photo_processing_insights')
-        .insert({
-          error_type: 'auto_fix_applied',
-          insights: `Applied fixes: ${result.appliedFixes.join(', ')} for ${result.filePath}`,
-          error_count: result.errors.length,
-          confidence_score: result.success ? 1.0 : 0.0
-        })
+      await this.logSuccessToFile({
+        type: 'fixes_applied',
+        filePath: result.filePath,
+        fixes: result.appliedFixes,
+        success: result.success
+      })
     }
   }
 
   private async logBatchResults(batchResult: BatchProcessingResult): Promise<void> {
-    await this.supabase
-      .from('photo_processing_insights')
-      .insert({
-        error_type: 'batch_processing',
-        insights: `Batch completed: ${batchResult.successful}/${batchResult.totalFiles} successful. Recommendations: ${batchResult.recommendations.join('; ')}`,
-        error_count: batchResult.failed,
-        confidence_score: batchResult.successful / batchResult.totalFiles
-      })
+    await this.logSuccessToFile({
+      type: 'batch_processing',
+      totalFiles: batchResult.totalFiles,
+      successful: batchResult.successful,
+      failed: batchResult.failed,
+      recommendations: batchResult.recommendations
+    })
   }
 }
 

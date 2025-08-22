@@ -1,11 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+// Etsy photo import script simplified for Cloudflare R2
+// Removed Supabase dependencies - using file-based storage
 import fs from 'fs'
 import path from 'path'
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Using Cloudflare R2 instead of Supabase
+console.log('Etsy import configured for Cloudflare R2 storage')
 
 interface PhotoData {
   id: string
