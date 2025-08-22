@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-// import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd' // Removed for compatibility
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,13 +26,19 @@ interface PhotoItem {
   description: string
   category: string
   location: string
-  image_url: string
-  thumbnail_url: string
-  base_price: number
-  display_order: number
-  is_featured: boolean
-  is_published: boolean
+  imageUrl: string
+  thumbnailUrl: string
+  basePrice: number
   tags: string[]
+  featured: boolean
+  published: boolean
+  metadata?: {
+    width: number
+    height: number
+    format: string
+    size: number
+    uploadDate: string
+  }
 }
 
 interface PhotoManagerProps {
@@ -89,7 +94,7 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
   const togglePhotoFeature = (photoId: string) => {
     setPhotos(prev => prev.map(photo => 
       photo.id === photoId 
-        ? { ...photo, is_featured: !photo.is_featured }
+        ? { ...photo, featured: !photo.featured }
         : photo
     ))
     setHasChanges(true)
@@ -98,7 +103,7 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
   const togglePhotoPublish = (photoId: string) => {
     setPhotos(prev => prev.map(photo => 
       photo.id === photoId 
-        ? { ...photo, is_published: !photo.is_published }
+        ? { ...photo, published: !photo.published }
         : photo
     ))
     setHasChanges(true)
@@ -153,37 +158,20 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
   }
 
   const PhotoCard = ({ photo, index }: { photo: PhotoItem; index: number }) => (
-    <Draggable draggableId={photo.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          className={`${
-            snapshot.isDragging ? 'rotate-2 shadow-lg' : ''
-          } transition-transform duration-200`}
-        >
-          <Card className="hover:shadow-md transition-shadow">
-            <div className="relative">
-              <img 
-                src={photo.thumbnail_url} 
-                alt={photo.title}
-                className="w-full h-48 object-cover rounded-t-lg"
-              />
-              
-              {/* Drag handle */}
-              <div 
-                {...provided.dragHandleProps}
-                className="absolute top-2 left-2 p-1 bg-white/80 rounded cursor-grab hover:bg-white"
-              >
-                <GripVertical className="h-4 w-4" />
-              </div>
+    <Card className="hover:shadow-md transition-shadow">
+      <div className="relative">
+        <img 
+          src={photo.image_url} 
+          alt={photo.title}
+          className="w-full h-48 object-cover rounded-t-lg"
+        />
 
               {/* Status badges */}
               <div className="absolute top-2 right-2 space-y-1">
-                {photo.is_featured && (
+                {photo.featured && (
                   <Badge className="bg-yellow-100 text-yellow-800">Featured</Badge>
                 )}
-                {!photo.is_published && (
+                {!photo.published && (
                   <Badge className="bg-gray-100 text-gray-800">Draft</Badge>
                 )}
               </div>
@@ -211,7 +199,7 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
                   <div className="flex items-center justify-between text-xs">
                     <div className="space-x-1">
                       <Badge variant="outline">{photo.category}</Badge>
-                      <Badge variant="outline">${photo.base_price}</Badge>
+                      <Badge variant="outline">${photo.basePrice}</Badge>
                     </div>
                     
                     <div className="flex space-x-1">
@@ -244,28 +232,25 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
                   <div className="flex space-x-2 mt-2">
                     <Button
                       size="sm"
-                      variant={photo.is_featured ? "default" : "outline"}
+                      variant={photo.featured ? "default" : "outline"}
                       onClick={() => togglePhotoFeature(photo.id)}
                       className="flex-1"
                     >
-                      {photo.is_featured ? 'Featured' : 'Feature'}
+                      {photo.featured ? 'Featured' : 'Feature'}
                     </Button>
                     <Button
                       size="sm"
-                      variant={photo.is_published ? "default" : "outline"}
+                      variant={photo.published ? "default" : "outline"}
                       onClick={() => togglePhotoPublish(photo.id)}
                       className="flex-1"
                     >
-                      {photo.is_published ? 'Published' : 'Publish'}
+                      {photo.published ? 'Published' : 'Publish'}
                     </Button>
                   </div>
                 </>
               )}
             </CardContent>
-          </Card>
-        </div>
-      )}
-    </Draggable>
+    </Card>
   )
 
   return (
@@ -339,13 +324,13 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{photos.filter(p => p.is_published).length}</div>
+            <div className="text-2xl font-bold">{photos.filter(p => p.published).length}</div>
             <div className="text-xs text-gray-600">Published</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">{photos.filter(p => p.is_featured).length}</div>
+            <div className="text-2xl font-bold">{photos.filter(p => p.featured).length}</div>
             <div className="text-xs text-gray-600">Featured</div>
           </CardContent>
         </Card>
@@ -358,25 +343,16 @@ export function PhotoManager({ photos: initialPhotos, onPhotoUpdate }: PhotoMana
       </div>
 
       {/* Photo Grid/List */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId="photos" direction={viewMode === 'grid' ? 'vertical' : 'vertical'}>
-          {(provided) => (
-            <div
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className={viewMode === 'grid' 
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-                : "space-y-4"
-              }
-            >
-              {filteredPhotos.map((photo, index) => (
-                <PhotoCard key={photo.id} photo={photo} index={index} />
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <div
+        className={viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+          : "space-y-4"
+        }
+      >
+        {filteredPhotos.map((photo, index) => (
+          <PhotoCard key={photo.id} photo={photo} index={index} />
+        ))}
+      </div>
 
       {filteredPhotos.length === 0 && (
         <Card>
@@ -407,14 +383,14 @@ function EditPhotoForm({
 }) {
   const [title, setTitle] = useState(photo.title)
   const [description, setDescription] = useState(photo.description)
-  const [price, setPrice] = useState(photo.base_price.toString())
+  const [price, setPrice] = useState(photo.basePrice.toString())
   const [tags, setTags] = useState(photo.tags.join(', '))
 
   const handleSave = () => {
     onSave({
       title,
       description,
-      base_price: parseFloat(price) || 0,
+      basePrice: parseFloat(price) || 0,
       tags: tags.split(',').map(tag => tag.trim()).filter(Boolean)
     })
   }

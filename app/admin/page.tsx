@@ -6,10 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PhotoManager } from '@/components/admin/photo-manager'
+import { PhotoUpload } from '@/components/admin/photo-upload'
 import { HostingerSyncPanel } from '@/components/admin/hostinger-sync-panel'
 import { SimpleLiveEditor } from '@/components/admin/simple-live-editor'
-import { getAllMockProducts } from '@/lib/mock-products'
-import { hostingerAPI } from '@/lib/hostinger-api'
 import { 
   Upload, 
   RefreshCw, 
@@ -54,56 +53,39 @@ export default function AdminDashboard() {
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [photos, setPhotos] = useState<any[]>([])
 
-  // Load hybrid product data on mount
+  // Load photos and products from R2
   useEffect(() => {
-    const loadHybridProducts = async () => {
+    const loadData = async () => {
       try {
-        console.log('🔄 Loading hybrid product data...')
-        const etsyProducts = getAllMockProducts()
-        const hybridProducts = await hostingerAPI.createHybridProductList(etsyProducts)
-        console.log(`✅ Loaded ${hybridProducts.length} total products (${etsyProducts.length} Etsy + ${hybridProducts.length - etsyProducts.length} Hostinger)`)
+        console.log('🔄 Loading photos from R2...')
         
-        setAllProducts(hybridProducts)
+        // Load photos from R2 API
+        const photosResponse = await fetch('/api/photos')
+        const photosData = await photosResponse.json()
         
-        // Convert to photo format for the photo manager
-        const photosForManager = hybridProducts.map(product => ({
-          id: product.id,
-          title: product.title,
-          description: product.description,
-          category: typeof product.category === 'string' ? product.category : product.category.name,
-          location: product.tags.find((tag: string) => tag.includes('california') || tag.includes('arizona') || tag.includes('hawaii')) || 'Unknown',
-          image_url: product.image_url,
-          thumbnail_url: product.image_url,
-          base_price: product.base_price,
-          display_order: parseInt(product.id.replace('h_', '')) || parseInt(product.id),
-          is_featured: product.id <= '4' || (typeof product.category === 'object' && hybridProducts.indexOf(product) < 4),
-          is_published: true,
-          tags: product.tags
-        }))
-        setPhotos(photosForManager)
+        if (photosData.success) {
+          setPhotos(photosData.data)
+          console.log(`✅ Loaded ${photosData.data.length} photos from R2`)
+        }
+        
+        // Load products from R2 API
+        const productsResponse = await fetch('/api/products')
+        const productsData = await productsResponse.json()
+        
+        if (productsData.success) {
+          setAllProducts(productsData.data)
+          console.log(`✅ Loaded ${productsData.data.length} products from R2`)
+        }
+        
       } catch (error) {
-        console.warn('⚠️ Using fallback mode with Etsy products only:', error.message)
-        // Fallback to just Etsy products
-        const etsyProducts = getAllMockProducts()
-        setAllProducts(etsyProducts)
-        setPhotos(etsyProducts.map(product => ({
-          id: product.id,
-          title: product.title,
-          description: product.description,
-          category: product.category.name,
-          location: 'Unknown',
-          image_url: product.image_url,
-          thumbnail_url: product.image_url,
-          base_price: product.base_price,
-          display_order: parseInt(product.id),
-          is_featured: product.id <= '4',
-          is_published: true,
-          tags: product.tags
-        })))
+        console.error('❌ Failed to load data from R2:', error)
+        // Set empty arrays on error
+        setPhotos([])
+        setAllProducts([])
       }
     }
     
-    loadHybridProducts()
+    loadData()
   }, [])
 
   useEffect(() => {
@@ -112,30 +94,40 @@ export default function AdminDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // In a real app, these would be API calls
-      // For now, we'll simulate the data
+      // Check R2 health status
+      const healthResponse = await fetch('/api/health')
+      const healthData = await healthResponse.json()
+      
       setSyncStatus({
-        lastSync: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        driveAvailable: true,
-        totalFiles: 905
+        lastSync: healthData.timestamp,
+        driveAvailable: healthData.services?.r2Storage?.status === 'healthy',
+        totalFiles: photos.length
+      })
+
+      // Calculate stats from actual photo data
+      const categories: Record<string, number> = {}
+      const locations: Record<string, number> = {}
+      
+      photos.forEach(photo => {
+        // Count categories
+        const category = photo.category || 'Other'
+        categories[category] = (categories[category] || 0) + 1
+        
+        // Extract location from tags
+        const locationTag = photo.tags?.find((tag: string) => 
+          tag.toLowerCase().includes('california') || 
+          tag.toLowerCase().includes('hawaii') || 
+          tag.toLowerCase().includes('arizona')
+        )
+        const location = locationTag || 'Other'
+        locations[location] = (locations[location] || 0) + 1
       })
 
       setImportStats({
-        totalPhotos: 905,
-        mainImages: 156,
-        categories: {
-          'Architecture': 45,
-          'Landscapes': 67,
-          'Cityscapes': 23,
-          'Nature': 18,
-          'Other': 3
-        },
-        locations: {
-          'California': 89,
-          'Hawaii': 42,
-          'Arizona': 21,
-          'Other': 4
-        }
+        totalPhotos: photos.length,
+        mainImages: photos.filter(p => p.featured).length,
+        categories,
+        locations
       })
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
@@ -332,10 +324,25 @@ export default function AdminDashboard() {
 
   const handlePhotoUpdate = async (updatedPhotos: any[]) => {
     try {
-      // In a real app, this would save to your database
+      // Update photos via R2 API
+      for (const photo of updatedPhotos) {
+        const response = await fetch(`/api/photos/${photo.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(photo)
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to update photo ${photo.id}`)
+        }
+      }
+      
       setPhotos(updatedPhotos)
-      console.log('Photos updated:', updatedPhotos)
-      // You could add an API call here to save the changes
+      console.log('Photos updated successfully')
+      
+      // Refresh dashboard data
+      await loadDashboardData()
+      
     } catch (error) {
       console.error('Failed to update photos:', error)
       throw error
@@ -520,10 +527,27 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="photos" className="space-y-4">
-          <PhotoManager 
-            photos={photos} 
-            onPhotoUpdate={handlePhotoUpdate}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <PhotoUpload 
+                onUploadComplete={async (photoIds) => {
+                  console.log('Photos uploaded:', photoIds)
+                  // Refresh data
+                  const photosResponse = await fetch('/api/photos')
+                  const photosData = await photosResponse.json()
+                  if (photosData.success) {
+                    setPhotos(photosData.data)
+                  }
+                }}
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <PhotoManager 
+                photos={photos} 
+                onPhotoUpdate={handlePhotoUpdate}
+              />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="sync" className="space-y-4">
