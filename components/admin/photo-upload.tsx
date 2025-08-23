@@ -158,19 +158,57 @@ export function PhotoUpload({ onUploadComplete }: PhotoUploadProps) {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* File Input */}
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-          <Upload className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-          <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Choose files or drag and drop them here
-            </p>
-            <Input
-              type="file"
-              multiple
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleFileSelect}
-              className="w-full"
-            />
+        <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center bg-blue-50">
+          <Upload className="h-12 w-12 mx-auto text-blue-500 mb-4" />
+          <div className="space-y-6">
+            <div className="bg-white p-4 rounded-lg border-2 border-blue-200">
+              <h3 className="text-lg font-bold text-blue-700 mb-2">📁 Upload Entire Folder</h3>
+              <Button
+                onClick={() => document.getElementById('folder-input')?.click()}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 text-base"
+              >
+                Choose Folder (Uploads ALL Images)
+              </Button>
+              <input
+                id="folder-input"
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                webkitdirectory=""
+                directory=""
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <p className="text-sm text-gray-600 mt-2">Perfect for uploading photo shoots or entire galleries</p>
+            </div>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-sm uppercase">
+                <span className="bg-blue-50 px-3 text-gray-500 font-medium">OR</span>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
+              <h3 className="text-lg font-bold text-gray-700 mb-2">📷 Upload Individual Files</h3>
+              <Button
+                onClick={() => document.getElementById('files-input')?.click()}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 text-base"
+              >
+                Choose Individual Photos
+              </Button>
+              <input
+                id="files-input"
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <p className="text-sm text-gray-600 mt-2">Select specific photos one by one</p>
+            </div>
           </div>
         </div>
 

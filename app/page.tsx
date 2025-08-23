@@ -10,13 +10,30 @@ import { hostingerAPI } from '@/lib/hostinger-api'
 
 async function getFeaturedProducts() {
   try {
-    // Create hybrid product list
-    const etsyProducts = getAllMockProducts()
-    const allProducts = await hostingerAPI.createHybridProductList(etsyProducts)
+    // Fetch real uploaded photos
+    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://prints.michaelhaslimphoto.com')
+    const response = await fetch(`${apiUrl}/api/photos`, {
+      cache: 'no-store'
+    })
+    const result = await response.json()
     
-    // In a real app, this would check for live drops
-    // For now, return first 8 products as featured
-    return allProducts.slice(0, 8)
+    if (result.success && result.data.length > 0) {
+      // Convert photos to product format and return first 8 as featured
+      return result.data.slice(0, 8).map((photo: any) => ({
+        id: photo.id,
+        title: photo.title,
+        category: photo.category,
+        location: photo.location,
+        tags: photo.tags,
+        basePrice: photo.basePrice || 545,
+        imageUrl: photo.imageUrl,
+        thumbnailUrl: photo.thumbnailUrl,
+        metadata: photo.metadata
+      }))
+    }
+    
+    // Fallback to mock data if no real photos
+    return getMockFeaturedProducts(8)
   } catch (error) {
     console.error('Error fetching featured products:', error)
     return getMockFeaturedProducts(8)

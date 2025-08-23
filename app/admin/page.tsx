@@ -9,6 +9,7 @@ import { PhotoManager } from '@/components/admin/photo-manager'
 import { PhotoUpload } from '@/components/admin/photo-upload'
 import { HostingerSyncPanel } from '@/components/admin/hostinger-sync-panel'
 import { SimpleLiveEditor } from '@/components/admin/simple-live-editor'
+import { OrderManagement } from '@/components/admin/order-management'
 import { 
   Upload, 
   RefreshCw, 
@@ -445,8 +446,9 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      <Tabs defaultValue="live" className="space-y-4">
+      <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>
+          <TabsTrigger value="orders">Orders</TabsTrigger>
           <TabsTrigger value="live">Live Editor</TabsTrigger>
           <TabsTrigger value="photos">Photo Manager</TabsTrigger>
           <TabsTrigger value="sync">Hostinger Sync</TabsTrigger>
@@ -454,6 +456,10 @@ export default function AdminDashboard() {
           <TabsTrigger value="stats">Statistics</TabsTrigger>
           <TabsTrigger value="jobs">Processing Jobs</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="orders" className="space-y-4">
+          <OrderManagement />
+        </TabsContent>
 
         <TabsContent value="live" className="space-y-4">
           <SimpleLiveEditor />

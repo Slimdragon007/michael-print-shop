@@ -43,7 +43,7 @@ export function ProductCard({
     // TODO: Implement wishlist functionality
   }
 
-  const basePrice = product.base_price
+  const basePrice = product.basePrice || product.base_price
   const currentPrice = selectedPrintOption 
     ? basePrice + selectedPrintOption.price_modifier 
     : basePrice
@@ -61,7 +61,7 @@ export function ProductCard({
       <Link href={`/products/${product.id}`}>
         <div className="relative aspect-square overflow-hidden">
           <Image
-            src={product.image_url}
+            src={product.imageUrl || product.image_url}
             alt={product.title}
             fill
             className="object-cover transition-transform duration-300 group-hover:scale-105"

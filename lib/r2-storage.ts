@@ -52,16 +52,16 @@ export class R2Storage {
       const luxuryData = await import('../data/luxury-gallery-photos.json')
       
       // Transform to our PhotoMetadata format
-      return luxuryData.default.map((photo: any) => ({
+      return luxuryData.default.photos.map((photo: any) => ({
         id: photo.id,
         title: photo.title,
         description: photo.description,
-        category: photo.category,
+        category: photo.category?.primary || 'Other',
         location: photo.location,
-        tags: photo.tags,
-        basePrice: photo.base_price,
-        imageUrl: this.getImageUrl(photo.image_url),
-        thumbnailUrl: this.getThumbnailUrl(photo.image_url),
+        tags: [photo.category?.primary || 'other'],
+        basePrice: photo.price || 100,
+        imageUrl: this.getImageUrl(photo.imageUrl),
+        thumbnailUrl: this.getThumbnailUrl(photo.thumbnailUrl),
         metadata: {
           width: photo.dimensions?.width || 2000,
           height: photo.dimensions?.height || 1333,

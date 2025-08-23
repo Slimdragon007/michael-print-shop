@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { OrdersDatabase } from '@/lib/database/orders'
+import { env } from '@/lib/env'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing STRIPE_SECRET_KEY environment variable')
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-12-18.acacia',
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { paymentIntentId, shippingInfo, total } = body
+    const { paymentIntentId } = body
 
     // Validate required fields
     if (!paymentIntentId) {
@@ -22,15 +20,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!shippingInfo) {
+    // Retrieve the payment intent to verify it was successful
+    let paymentIntent: Stripe.PaymentIntent
+    try {
+      paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    } catch (stripeError) {
+      console.error('Failed to retrieve payment intent:', stripeError)
       return NextResponse.json(
-        { error: 'Shipping information is required' },
+        { error: 'Invalid payment intent' },
         { status: 400 }
       )
     }
-
-    // Retrieve the payment intent to verify it was successful
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId)
 
     if (paymentIntent.status !== 'succeeded') {
       return NextResponse.json(
@@ -39,55 +39,105 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse items from metadata
-    const items = JSON.parse(paymentIntent.metadata.items || '[]')
-
-    // Create order object (in a real app, this would be saved to a database)
-    const order = {
-      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      paymentIntentId,
-      status: 'confirmed',
-      items,
-      total,
-      shipping: {
-        firstName: shippingInfo.firstName,
-        lastName: shippingInfo.lastName,
-        email: shippingInfo.email,
-        address: shippingInfo.address,
-        city: shippingInfo.city,
-        state: shippingInfo.state,
-        postalCode: shippingInfo.postalCode,
-        country: shippingInfo.country,
-      },
-      createdAt: new Date().toISOString(),
-      estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+    // Check if order already exists
+    const existingOrder = await OrdersDatabase.getOrderByPaymentIntent(paymentIntentId)
+    if (existingOrder) {
+      return NextResponse.json({
+        success: true,
+        order: {
+          id: existingOrder.id,
+          order_number: existingOrder.order_number,
+          status: existingOrder.status,
+          total: existingOrder.total,
+          created_at: existingOrder.created_at
+        },
+      })
     }
 
-    // In a production app, you would:
-    // 1. Save order to database
-    // 2. Send confirmation email
-    // 3. Trigger fulfillment process
-    // 4. Update inventory
-    
-    console.log('Order created:', order)
-
-    // For now, we'll just return the order
+    // If the webhook hasn't processed this payment yet, return a message
+    // The webhook will handle order creation for security
     return NextResponse.json({
       success: true,
-      order,
+      message: 'Order is being processed. You will receive a confirmation email shortly.',
+      payment_intent_id: paymentIntentId
     })
+
   } catch (error) {
-    console.error('Error creating order:', error)
+    console.error('Error handling order request:', error)
     
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: `Payment error: ${error.message}` },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to process order request' },
+      { status: 500 }
+    )
+  }
+}
+
+// GET endpoint for retrieving orders
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const orderNumber = searchParams.get('order_number')
+    const orderId = searchParams.get('id')
+    const paymentIntentId = searchParams.get('payment_intent_id')
+
+    let order = null
+
+    if (orderNumber) {
+      order = await OrdersDatabase.getOrderByNumber(orderNumber)
+    } else if (orderId) {
+      order = await OrdersDatabase.getOrderById(orderId)
+    } else if (paymentIntentId) {
+      order = await OrdersDatabase.getOrderByPaymentIntent(paymentIntentId)
+    } else {
+      return NextResponse.json(
+        { error: 'Order identifier required (order_number, id, or payment_intent_id)' },
+        { status: 400 }
+      )
+    }
+
+    if (!order) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
+    // Return sanitized order data (remove sensitive information)
+    return NextResponse.json({
+      success: true,
+      order: {
+        id: order.id,
+        order_number: order.order_number,
+        status: order.status,
+        subtotal: order.subtotal,
+        tax: order.tax,
+        shipping: order.shipping,
+        total: order.total,
+        tracking_number: order.tracking_number,
+        shipping_address: order.shipping_address,
+        created_at: order.created_at,
+        estimated_delivery: new Date(new Date(order.created_at).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        items: order.items.map(item => ({
+          id: item.id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          product_snapshot: item.product_snapshot
+        }))
+      }
+    })
+
+  } catch (error) {
+    console.error('Error retrieving order:', error)
+    return NextResponse.json(
+      { error: 'Failed to retrieve order' },
       { status: 500 }
     )
   }
