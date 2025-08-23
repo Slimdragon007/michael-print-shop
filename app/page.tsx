@@ -9,9 +9,15 @@ import { getMockFeaturedProducts, getAllMockProducts } from '@/lib/mock-products
 import { hostingerAPI } from '@/lib/hostinger-api'
 
 async function getFeaturedProducts() {
+  // For now, use mock data during build and let client-side handle real photos
+  // This prevents build-time fetch errors
+  if (process.env.NODE_ENV !== 'development') {
+    return getMockFeaturedProducts(8)
+  }
+  
   try {
-    // Fetch real uploaded photos
-    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://prints.michaelhaslimphoto.com')
+    // Only fetch in development
+    const apiUrl = 'http://localhost:3000'
     const response = await fetch(`${apiUrl}/api/photos`, {
       cache: 'no-store'
     })
@@ -32,7 +38,6 @@ async function getFeaturedProducts() {
       }))
     }
     
-    // Fallback to mock data if no real photos
     return getMockFeaturedProducts(8)
   } catch (error) {
     console.error('Error fetching featured products:', error)
